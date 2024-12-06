@@ -34,16 +34,34 @@ jobs:
         run: |
           cd back
           mvn clean install
+          
+      - name: Run Backend Tests with Coverage
+        run: |
+          cd back
+          mvn test
+
+      - name: Generate JaCoCo Coverage Report
+        run: |
+          cd back
+          mvn jacoco:report
+
+      - name: Upload JaCoCo Coverage Report as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: jacoco-coverage-report
+          path: back/target/site/jacoco/index.html
 
       - name: Build Docker image for Backend
         run: |
           cd back
-          docker build -t bobapp-back .
+          docker build -t bobapp-back:latest .
 
-      - name: Run Backend Tests
-        run: |
-          cd back
-          mvn test
+      - name: Save Backend Docker image as artifact
+        run: docker save bobapp-back:latest | gzip > bobapp-back.tar.gz
+      - uses: actions/upload-artifact@v3
+        with:
+          name: bobapp-back
+          path: bobapp-back.tar.gz
 
   # Job pour tester et build le frontend
   frontend:
@@ -70,7 +88,14 @@ jobs:
       - name: Build Docker image for Frontend
         run: |
           cd front
-          docker build -t bobapp-front .
+          docker build -t bobapp-front:latest .
+
+      - name: Save Frontend Docker image as artifact
+        run: docker save bobapp-front:latest | gzip > bobapp-front.tar.gz
+      - uses: actions/upload-artifact@v3
+        with:
+          name: bobapp-front
+          path: bobapp-front.tar.gz
 
   # Job pour analyser la qualité du code avec SonarQube
   quality_analysis:
@@ -95,18 +120,37 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
     steps:
+      # Étape 1 : Télécharger et charger l'image Docker du backend
+      - name: Download Backend Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bobapp-back
+      - name: Load Backend Docker image
+        run: gunzip -c bobapp-back.tar.gz | docker load
+
+      # Étape 2 : Télécharger et charger l'image Docker du frontend
+      - name: Download Frontend Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bobapp-front
+      - name: Load Frontend Docker image
+        run: gunzip -c bobapp-front.tar.gz | docker load
+  
+      # Étape 3 : Se connecter à Docker Hub
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Backend Docker image to DockerHub
+  
+      # Étape 4 : Taguer et pousser l'image Docker du backend
+      - name: Tag and Push Backend Docker image
         run: |
-          docker tag bobapp-back rykesz/bobapp-back:latest
-          docker push rykesz/bobapp-back:latest
-
-      - name: Push Frontend Docker image to DockerHub
+          docker tag bobapp-back:latest ${{ secrets.DOCKER_USERNAME }}/bobapp-back:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/bobapp-back:latest
+  
+      # Étape 5 : Taguer et pousser l'image Docker du frontend
+      - name: Tag and Push Frontend Docker image
         run: |
-          docker tag bobapp-front rykesz/bobapp-front:latest
-          docker push rykesz/bobapp-front:latest
+          docker tag bobapp-front:latest ${{ secrets.DOCKER_USERNAME }}/bobapp-front:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/bobapp-front:latest
