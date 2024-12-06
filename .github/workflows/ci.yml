@@ -103,8 +103,10 @@ jobs:
 
       - name: Push Backend Docker image to DockerHub
         run: |
-          docker push bobapp-back
+          docker tag bobapp-back rykesz/bobapp-back:latest
+          docker push rykesz/bobapp-back:latest
 
       - name: Push Frontend Docker image to DockerHub
         run: |
-          docker push bobapp-front
+          docker tag bobapp-front rykesz/bobapp-front:latest
+          docker push rykesz/bobapp-front:latest
