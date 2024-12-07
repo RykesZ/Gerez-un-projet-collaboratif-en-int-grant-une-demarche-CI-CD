@@ -80,6 +80,17 @@ jobs:
           cd front
           npm install
 
+      - name: Run Frontend Tests with Coverage
+        run: |
+          cd front
+          npm run test -- --watch=false --code-coverage
+
+      - name: Upload LCOV Coverage Report as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: lcov-coverage-report
+          path: front/coverage/bobapp/lcov.info
+
       - name: Build Frontend
         run: |
           cd front
@@ -103,7 +114,8 @@ jobs:
     needs: [backend, frontend]
     steps:
     # Étape 1 : Récupérer le code source
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Pour une analyse complète
 
@@ -121,6 +133,7 @@ jobs:
           -p 9000:9000 \
           -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
           sonarqube:latest
+          
     # Attendre que le serveur SonarQube soit prêt
     - name: Wait for SonarQube to be ready
       run: |
@@ -144,8 +157,8 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    # Étape 6 : Build et analyse du backend
-    - name: Build and analyze Backend
+    # Étape 6 : Analyse du backend avec SonarQube
+    - name: Analyze Backend with SonarQube
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: http://localhost:9000
@@ -153,10 +166,12 @@ jobs:
         cd back
         mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=BobApp-backend \
-            -Dsonar.projectName='BobApp Backend'
+            -Dsonar.projectName='BobApp Backend' \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-    # Étape 7 : Build et analyse du frontend
-    - name: Build and analyze Frontend
+    # Étape 7 : Analyse du frontend avec SonarQube
+    - name: Analyze Frontend with SonarQube
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: http://localhost:9000
@@ -165,8 +180,11 @@ jobs:
         npx sonar-scanner \
           -Dsonar.projectKey=BobApp-frontend \
           -Dsonar.projectName='BobApp Frontend' \
-          -Dsonar.sources=. \
-          -Dsonar.language=js \
+          -Dsonar.sources=src \
+          -Dsonar.tests=src \
+          -Dsonar.test.inclusions="**/*.spec.ts" \
+          -Dsonar.typescript.lcov.reportPaths=coverage/bobapp/lcov.info \
+          -Dsonar.language=TypeScript \
           -Dsonar.host.url=http://localhost:9000 \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
