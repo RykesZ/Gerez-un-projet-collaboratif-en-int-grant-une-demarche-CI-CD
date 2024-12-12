@@ -45,11 +45,32 @@ jobs:
           cd back
           mvn jacoco:report
 
+      - name: Create JaCoCo Coverage Report Archive
+        run: |
+          # Naviguer vers le répertoire du backend
+          cd back/target/site/jacoco
+          
+          # Générer un nom de dossier et d'archive basé sur la date et l'heure
+          REPORT_NAME="tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')"
+          
+          # Créer un répertoire avec le nom unique
+          mkdir -p "../$REPORT_NAME"
+          
+          # Déplacer tous les fichiers nécessaires dans le répertoire
+          mv ./* "../$REPORT_NAME/"
+          
+          # Revenir au niveau supérieur
+          cd ..
+          
+          # Créer une archive ZIP avec le dossier
+          zip -r "${REPORT_NAME}.zip" "$REPORT_NAME"
+        shell: bash
+
       - name: Upload JaCoCo Coverage Report as Artifact
         uses: actions/upload-artifact@v3
         with:
           name: jacoco-coverage-report
-          path: back/target/site/jacoco
+          path: back/target/site/${REPORT_NAME}.zip
 
       - name: Build Docker image for Backend
         run: |
@@ -96,7 +117,7 @@ jobs:
       - name: Generate HTML Coverage Report from LCOV
         run: |
           cd front/coverage/bobapp
-          mkdir lcov-report
+          mkdir -p lcov-report
           genhtml lcov.info --output-directory lcov-report
 
       - name: Upload LCOV Coverage HTML Report as Artifact
