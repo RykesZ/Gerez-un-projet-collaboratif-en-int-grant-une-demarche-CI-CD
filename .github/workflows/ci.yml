@@ -125,10 +125,10 @@ jobs:
         fetch-depth: 0  # Pour une analyse complète
 
     # Étape 2 : Configurer JDK 17
-    - name: Set up JDK 17
+    - name: Set up JDK 11
       uses: actions/setup-java@v4
       with:
-        java-version: 17
+        java-version: 11
         distribution: 'zulu'
 
     # Étape 3 : Démarrer un serveur SonarQube local
@@ -175,19 +175,6 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    # Étape 6 : Analyse du backend avec SonarQube
-    - name: Analyze Backend with SonarQube
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: http://localhost:9000
-      run: |
-        cd back
-        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=BobApp-backend \
-            -Dsonar.projectName='BobApp Backend' \
-            -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
     # Étape 7 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
       env:
@@ -205,6 +192,19 @@ jobs:
           -Dsonar.language=TypeScript \
           -Dsonar.host.url=http://localhost:9000 \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+    # Étape 6 : Analyse du backend avec SonarQube
+    - name: Analyze Backend with SonarQube
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: http://localhost:9000
+      run: |
+        cd back
+        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=BobApp-backend \
+            -Dsonar.projectName='BobApp Backend' \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
     # Étape 8 : Exporter les résultats d'analyse
     - name: Export SonarQube Results
