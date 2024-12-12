@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: jacoco-coverage-report
-          path: back/target/site/jacoco/index.html
+          path: back/target/site/jacoco
 
       - name: Build Docker image for Backend
         run: |
@@ -75,6 +75,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk1.0-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxrandr2 libxss1 libxtst6 fonts-liberation libappindicator3-1 libasound2 libgbm1
 
+      - name: Install LCOV
+        run: sudo apt-get install -y lcov
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -90,11 +93,17 @@ jobs:
           cd front
           npm run test:ci -- --watch=false --code-coverage
 
-      - name: Upload LCOV Coverage Report as Artifact
+      - name: Generate HTML Coverage Report from LCOV
+        run: |
+          cd front/coverage/bobapp
+          mkdir lcov-report
+          genhtml lcov.info --output-directory lcov-report
+
+      - name: Upload LCOV Coverage HTML Report as Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: lcov-coverage-report
-          path: front/coverage/bobapp/lcov.info
+          name: lcov-html-report
+          path: front/coverage/bobapp/lcov-report
 
       - name: Build Frontend
         run: |
