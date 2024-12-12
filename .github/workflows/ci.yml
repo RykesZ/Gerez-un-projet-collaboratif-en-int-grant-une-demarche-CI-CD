@@ -178,7 +178,7 @@ jobs:
     # Étape 7 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
       env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_TOKEN: $SONAR_TOKEN
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd front
@@ -191,12 +191,12 @@ jobs:
           -Dsonar.typescript.lcov.reportPaths=coverage/bobapp/lcov.info \
           -Dsonar.language=TypeScript \
           -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.login=$SONAR_TOKEN
 
     # Étape 6 : Analyse du backend avec SonarQube
     - name: Analyze Backend with SonarQube
       env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_TOKEN: $SONAR_TOKEN
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd back
@@ -204,14 +204,14 @@ jobs:
             -Dsonar.projectKey=BobApp-backend \
             -Dsonar.projectName='BobApp Backend' \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.login=$SONAR_TOKEN
 
     # Étape 8 : Exporter les résultats d'analyse
     - name: Export SonarQube Results
       run: |
-        curl -u ${{ secrets.SONAR_TOKEN }}: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
         > sonar-backend-results.json
-        curl -u ${{ secrets.SONAR_TOKEN }}: http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
         > sonar-frontend-results.json
 
     # Étape 9 : Archiver les résultats
