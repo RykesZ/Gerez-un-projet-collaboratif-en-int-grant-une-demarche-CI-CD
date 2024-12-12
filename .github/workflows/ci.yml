@@ -146,6 +146,19 @@ jobs:
           curl -s http://localhost:9000/api/system/status | grep -q '"status":"UP"' && break || sleep 5
         done
 
+    # Étape 3.1 : Créer un token Admin SonarQube
+    - name: Generate Admin Token for SonarQube
+      run: |
+        ADMIN_TOKEN=$(curl -X POST -u admin:admin -d "name=AdminToken" "http://localhost:9000/api/user_tokens/generate" | jq -r '.token')
+        echo "SONAR_TOKEN=$ADMIN_TOKEN" >> $GITHUB_ENV
+
+    # Étape 3.2 : Utiliser le token Admin pour des configurations supplémentaires si nécessaire
+    - name: Configure SonarQube with Admin Token
+      run: |
+        curl -u $SONAR_TOKEN: \
+          -X POST "http://localhost:9000/api/settings/set" \
+          -d "key=sonar.some.configuration&value=some-value"
+
     # Étape 4 : Mise en cache des packages SonarQube
     - name: Cache SonarQube packages
       uses: actions/cache@v4
@@ -192,6 +205,23 @@ jobs:
           -Dsonar.language=TypeScript \
           -Dsonar.host.url=http://localhost:9000 \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+    # Étape 8 : Exporter les résultats d'analyse
+    - name: Export SonarQube Results
+      run: |
+        curl -u ${{ secrets.SONAR_TOKEN }}: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
+        > sonar-backend-results.json
+        curl -u ${{ secrets.SONAR_TOKEN }}: http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
+        > sonar-frontend-results.json
+
+    # Étape 9 : Archiver les résultats
+    - name: Upload SonarQube Results as Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: sonar-results
+        path: |
+          sonar-backend-results.json
+          sonar-frontend-results.json
 
 
   # Job pour déployer sur Docker Hub
