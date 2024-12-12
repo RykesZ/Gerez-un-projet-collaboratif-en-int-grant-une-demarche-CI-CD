@@ -45,13 +45,14 @@ jobs:
           cd back
           mvn jacoco:report
 
+      - name: Set REPORT_NAME variable
+        id: set_report_name
+        run: echo "REPORT_NAME=tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_ENV
+
       - name: Create JaCoCo Coverage Report Archive
         run: |
           # Naviguer vers le répertoire du backend
           cd back/target/site/jacoco
-          
-          # Générer un nom de dossier et d'archive basé sur la date et l'heure
-          REPORT_NAME="tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')"
           
           # Créer un répertoire avec le nom unique
           mkdir -p "../$REPORT_NAME"
@@ -70,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: jacoco-coverage-report
-          path: back/target/site/${REPORT_NAME}.zip
+          path: back/target/site/${{ env.REPORT_NAME }}.zip
 
       - name: Build Docker image for Backend
         run: |
@@ -117,8 +118,16 @@ jobs:
       - name: Generate HTML Coverage Report from LCOV
         run: |
           cd front/coverage/bobapp
+    
+          # Créer le dossier pour le rapport HTML
           mkdir -p lcov-report
-          genhtml lcov.info --output-directory lcov-report
+          
+          # Générer le rapport HTML avec les chemins corrigés
+          genhtml lcov.info \
+            --output-directory lcov-report \
+            --prefix /home/runner/work/Gerez-un-projet-collaboratif-en-int-grant-une-demarche-CI-CD/Gerez-un-projet-collaboratif-en-int-grant-une-demarche-CI-CD/front
+        shell: bash
+
 
       - name: Upload LCOV Coverage HTML Report as Artifact
         uses: actions/upload-artifact@v3
