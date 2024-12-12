@@ -148,9 +148,20 @@ jobs:
 
     # Étape 3.1 : Créer un token Admin SonarQube
     - name: Generate Admin Token for SonarQube
+      id: generate-token
       run: |
-        ADMIN_TOKEN=$(curl -X POST -u admin:admin -d "name=AdminToken" "http://localhost:9000/api/user_tokens/generate" | jq -r '.token')
-        echo "SONAR_TOKEN=$ADMIN_TOKEN" >> $GITHUB_ENV
+        export SONAR_TOKEN=$(curl -X POST -u admin:admin -d "name=AdminToken" "http://localhost:9000/api/user_tokens/generate" | jq -r '.token')
+        echo "SONAR_TOKEN=$SONAR_TOKEN" >> $GITHUB_ENV
+      env:
+        SONAR_TOKEN: $SONAR_TOKEN
+
+    - name: Debug Token
+      run: |
+        echo "SONAR_TOKEN=$SONAR_TOKEN"
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/system/status
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+
 
     # Étape 3.2 : Utiliser le token Admin pour des configurations supplémentaires si nécessaire
     - name: Configure SonarQube with Admin Token
@@ -178,7 +189,7 @@ jobs:
     # Étape 7 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
       env:
-        SONAR_TOKEN: $SONAR_TOKEN
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd front
@@ -196,7 +207,7 @@ jobs:
     # Étape 6 : Analyse du backend avec SonarQube
     - name: Analyze Backend with SonarQube
       env:
-        SONAR_TOKEN: $SONAR_TOKEN
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd back
