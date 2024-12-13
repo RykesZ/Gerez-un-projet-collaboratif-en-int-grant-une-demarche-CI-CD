@@ -116,13 +116,19 @@ jobs:
           
           # Renommer le dossier pour correspondre au nom de l'artefact
           mv front/coverage/bobapp "$REPORT_NAME"
+
+          # Sauvegarder le nom de l'artefact dans une variable d'environnement pour l'étape suivante
+          echo "REPORT_NAME=$REPORT_NAME" >> $GITHUB_ENV
         shell: bash
+
+      - name: Verify Artifact Directory
+        run: ls -la ${{ env.REPORT_NAME }}
       
       - name: Upload Frontend Test Report Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.REPORT_NAME }}
-          path: "$REPORT_NAME/"
+          path: ${{ env.REPORT_NAME }}
 
       - name: Build Frontend
         run: |
