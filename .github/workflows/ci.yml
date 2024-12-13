@@ -189,13 +189,13 @@ jobs:
       env:
         SONAR_TOKEN: $SONAR_TOKEN
 
-    - name: Debug Token
+    # Debugger le token et vérifier le statut du serveur
+    - name: Debug SonarQube Setup
       run: |
         echo "SONAR_TOKEN=$SONAR_TOKEN"
         curl -u $SONAR_TOKEN: http://localhost:9000/api/system/status
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-
 
     # Étape 3.2 : Utiliser le token Admin pour des configurations supplémentaires si nécessaire
     - name: Configure SonarQube with Admin Token
@@ -220,7 +220,31 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    # Étape 7 : Analyse du frontend avec SonarQube
+    - name: List SonarQube Projects
+      run: |
+        curl -u ${{ env.SONAR_TOKEN }}: http://localhost:9000/api/components/search | jq
+
+    # Étape 6 : Analyse du backend avec SonarQube
+    - name: Analyze Backend with SonarQube
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        SONAR_HOST_URL: http://localhost:9000
+      run: |
+        cd back
+        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=BobApp-backend \
+            -Dsonar.projectName='BobApp Backend' \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=$SONAR_TOKEN
+
+    # Étape 7 : Générer les rapports HTML pour le backend
+    - name: Generate Backend HTML Report
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+      run: |
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities > backend-report.html
+
+    # Étape 8 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
@@ -238,36 +262,31 @@ jobs:
           -Dsonar.host.url=http://localhost:9000 \
           -Dsonar.login=$SONAR_TOKEN
 
-    # Étape 6 : Analyse du backend avec SonarQube
-    - name: Analyze Backend with SonarQube
+    # Étape 9 : Générer les rapports HTML pour le frontend
+    - name: Generate Frontend HTML Report
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-        SONAR_HOST_URL: http://localhost:9000
       run: |
-        cd back
-        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=BobApp-backend \
-            -Dsonar.projectName='BobApp Backend' \
-            -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=$SONAR_TOKEN
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities > frontend-report.html
 
-    # Étape 8 : Exporter les résultats d'analyse
-    - name: Export SonarQube Results
+    # Étape 10 : Debugger et afficher les informations sur les projets analysés
+    - name: Debug Analysis Logs
       run: |
-        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
-        > sonar-backend-results.json
-        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities \
-        > sonar-frontend-results.json
+        echo "=== BACKEND ANALYSIS ==="
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/components/show?component=BobApp-backend | jq
+        echo "=== FRONTEND ANALYSIS ==="
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/components/show?component=BobApp-frontend | jq
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
 
-    # Étape 9 : Archiver les résultats
-    - name: Upload SonarQube Results as Artifacts
+    # Étape 11 : Archiver les rapports HTML comme artefacts
+    - name: Upload SonarQube Reports as Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: sonar-results
+        name: sonar-reports
         path: |
-          sonar-backend-results.json
-          sonar-frontend-results.json
-
+          backend-report.html
+          frontend-report.html
 
   # Job pour déployer sur Docker Hub
   deploy:
