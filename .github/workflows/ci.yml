@@ -62,16 +62,13 @@ jobs:
           
           # Revenir au niveau supérieur
           cd ..
-          
-          # Créer une archive ZIP avec le dossier
-          zip -r "${REPORT_NAME}.zip" "$REPORT_NAME"
         shell: bash
 
       - name: Upload JaCoCo Coverage Report as Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: jacoco-coverage-report
-          path: back/target/site/${{ env.REPORT_NAME }}.zip
+          name: ${{ env.REPORT_NAME }}
+          path: back/target/site/${{ env.REPORT_NAME }}
 
       - name: Build Docker image for Backend
         run: |
@@ -97,9 +94,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk1.0-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxrandr2 libxss1 libxtst6 fonts-liberation libappindicator3-1 libasound2 libgbm1
 
-      - name: Install LCOV
-        run: sudo apt-get install -y lcov
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -115,25 +109,20 @@ jobs:
           cd front
           npm run test:ci -- --watch=false --code-coverage
 
-      - name: Generate HTML Coverage Report from LCOV
+      - name: Upload Frontend Test Report
         run: |
-          cd front/coverage/bobapp
-    
-          # Créer le dossier pour le rapport HTML
-          mkdir -p lcov-report
+          # Définir le nom dynamique basé sur la date et l'heure
+          REPORT_NAME="tests_frontend_jasmine_report_$(date +'%Y%m%d_%H%M%S')"
           
-          # Générer le rapport HTML avec les chemins corrigés
-          genhtml lcov.info \
-            --output-directory lcov-report \
-            --prefix /home/runner/work/Gerez-un-projet-collaboratif-en-int-grant-une-demarche-CI-CD/Gerez-un-projet-collaboratif-en-int-grant-une-demarche-CI-CD/front
+          # Renommer le dossier pour correspondre au nom de l'artefact
+          mv front/coverage/bobapp "$REPORT_NAME"
         shell: bash
-
-
-      - name: Upload LCOV Coverage HTML Report as Artifact
+      
+      - name: Upload Frontend Test Report Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: lcov-html-report
-          path: front/coverage/bobapp/lcov-report
+          name: ${{ env.REPORT_NAME }}
+          path: "$REPORT_NAME/"
 
       - name: Build Frontend
         run: |
