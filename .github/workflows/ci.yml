@@ -231,7 +231,7 @@ jobs:
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd back
-        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          mvn sonar:sonar \
             -Dsonar.projectKey=BobApp-backend \
             -Dsonar.projectName='BobApp Backend' \
             -Dsonar.host.url=http://localhost:9000 \
@@ -242,12 +242,8 @@ jobs:
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
-        cd back
-        mvn sonar:sonar \
-          -Dsonar.projectKey=BobApp-backend \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=$SONAR_TOKEN \
-          -Dsonar.report.output.relative.path=../backend-report.html
+        mkdir -p back/target/sonar-reports
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-backend" -o back/target/sonar-reports/backend-report.html
 
     # Étape 8 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
@@ -255,29 +251,20 @@ jobs:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
         SONAR_HOST_URL: http://localhost:9000
       run: |
-        cd front
-        npx sonar-scanner \
-          -Dsonar.projectKey=BobApp-frontend \
-          -Dsonar.projectName='BobApp Frontend' \
-          -Dsonar.sources=src \
-          -Dsonar.tests=src \
-          -Dsonar.test.inclusions="**/*.spec.ts" \
-          -Dsonar.typescript.lcov.reportPaths=coverage/bobapp/lcov.info \
-          -Dsonar.language=TypeScript \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=$SONAR_TOKEN
+         cd front
+          npx sonar-scanner \
+            -Dsonar.projectKey=BobApp-frontend \
+            -Dsonar.sources=src \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=$SONAR_TOKEN
 
     # Étape 9 : Générer les rapports HTML pour le frontend
     - name: Generate Frontend HTML Report
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
-        cd front
-        npx sonar-scanner \
-          -Dsonar.projectKey=BobApp-frontend \
-          -Dsonar.host.url=http://localhost:9000 \
-          -Dsonar.login=$SONAR_TOKEN \
-          -Dsonar.report.output.relative.path=../frontend-report.html
+        mkdir -p front/sonar-reports
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-frontend" -o front/sonar-reports/frontend-report.html
 
     # Étape 10 : Debugger et afficher les informations sur les projets analysés
     - name: Debug Analysis Logs
@@ -295,8 +282,8 @@ jobs:
       with:
         name: sonar-reports
         path: |
-          backend-report.html
-          frontend-report.html
+          back/target/sonar-reports/backend-report.html
+          front/sonar-reports/frontend-report.html
 
   # Job pour déployer sur Docker Hub
   deploy:
