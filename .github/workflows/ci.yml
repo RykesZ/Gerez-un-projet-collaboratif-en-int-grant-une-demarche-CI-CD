@@ -242,7 +242,12 @@ jobs:
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
-        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities > backend-report.html
+        cd back
+        mvn sonar:sonar \
+          -Dsonar.projectKey=BobApp-backend \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.login=$SONAR_TOKEN \
+          -Dsonar.report.output.relative.path=../backend-report.html
 
     # Étape 8 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
@@ -267,7 +272,12 @@ jobs:
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
-        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities > frontend-report.html
+        cd front
+        npx sonar-scanner \
+          -Dsonar.projectKey=BobApp-frontend \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.login=$SONAR_TOKEN \
+          -Dsonar.report.output.relative.path=../frontend-report.html
 
     # Étape 10 : Debugger et afficher les informations sur les projets analysés
     - name: Debug Analysis Logs
