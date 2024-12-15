@@ -224,6 +224,10 @@ jobs:
       run: |
         curl -u ${{ env.SONAR_TOKEN }}: http://localhost:9000/api/components/search | jq
 
+    - name: Verify Compiled Classes
+      run: |
+        ls -la back/target/classes
+
     # Étape 6 : Analyse du backend avec SonarQube
     - name: Analyze Backend with SonarQube
       env:
@@ -235,7 +239,8 @@ jobs:
             -Dsonar.projectKey=BobApp-backend \
             -Dsonar.projectName='BobApp Backend' \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=$SONAR_TOKEN
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.java.binaries=target/classes
 
     # Étape 7 : Générer les rapports HTML pour le backend
     - name: Generate Backend HTML Report
