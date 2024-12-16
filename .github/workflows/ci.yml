@@ -266,12 +266,15 @@ jobs:
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd back
-        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+        mvn -X verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=BobApp-backend \
             -Dsonar.projectName='BobApp Backend' \
             -Dsonar.host.url=http://localhost:9000 \
             -Dsonar.login=$SONAR_TOKEN \
-            -Dsonar.java.binaries=target/classes
+            -Dsonar.sources=src/main/java \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.language=java
+
 
     # Étape 7 : Générer les rapports HTML pour le backend
     - name: Generate Backend HTML Report
