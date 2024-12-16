@@ -283,12 +283,12 @@ jobs:
 
 
     # Étape 7 : Générer les rapports HTML pour le backend
-    - name: Generate Backend HTML Report
-      env:
-        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-      run: |
-        mkdir -p back/target/sonar-reports
-        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o back/target/sonar-reports/backend-report.html
+    # - name: Generate Backend HTML Report
+    #  env:
+    #    SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+    #  run: |
+    #    mkdir -p back/target/sonar-reports
+    #    curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o back/target/sonar-reports/backend-report.html
 
     # Étape 8 : Analyse du frontend avec SonarQube
     - name: Analyze Frontend with SonarQube
