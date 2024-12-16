@@ -33,7 +33,10 @@ jobs:
       - name: Build Backend
         run: |
           cd back
-          mvn clean install
+          mvn clean compile
+
+      - name: Verify Compilation Output
+        run: ls -la back/target/classes
           
       - name: Run Backend Tests with Coverage
         run: |
