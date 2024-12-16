@@ -222,7 +222,7 @@ jobs:
 
     - name: List SonarQube Projects
       run: |
-        curl -u ${{ env.SONAR_TOKEN }}: http://localhost:9000/api/components/search | jq
+        curl -u ${{ env.SONAR_TOKEN }}: "http://localhost:9000/api/components/search?qualifiers=TRK" | jq
 
     - name: Verify Compiled Classes
       run: |
@@ -235,7 +235,7 @@ jobs:
         SONAR_HOST_URL: http://localhost:9000
       run: |
         cd back
-          mvn sonar:sonar \
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=BobApp-backend \
             -Dsonar.projectName='BobApp Backend' \
             -Dsonar.host.url=http://localhost:9000 \
