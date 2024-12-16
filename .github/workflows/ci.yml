@@ -333,7 +333,7 @@ jobs:
       with:
         name: sonar-reports
         path: |
-          back/target/sonar-reports/backend-report.html
+          back/target/sonar-reports/backend-report.json
           front/sonar-reports/frontend-report.html
 
   # Job pour déployer sur Docker Hub
