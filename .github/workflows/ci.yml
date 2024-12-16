@@ -41,7 +41,6 @@ jobs:
       - name: Verify Compiled Java Classes
         run: |
           find back/target/classes -type f
-
           
       - name: Run Backend Tests with Coverage
         run: |
@@ -273,8 +272,8 @@ jobs:
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.sources=src/main/java \
             -Dsonar.java.binaries=target/classes \
-            -Dsonar.language=java
-
+            -Dsonar.language=java \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
     # Étape 7 : Générer les rapports HTML pour le backend
     - name: Generate Backend HTML Report
