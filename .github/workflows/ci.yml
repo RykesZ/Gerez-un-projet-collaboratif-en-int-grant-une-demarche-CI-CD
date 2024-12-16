@@ -37,6 +37,11 @@ jobs:
 
       - name: Verify Compilation Output
         run: ls -la back/target/classes
+
+      - name: Verify Compiled Java Classes
+        run: |
+          find back/target/classes -type f
+
           
       - name: Run Backend Tests with Coverage
         run: |
@@ -233,9 +238,14 @@ jobs:
       run: |
         curl -u $SONAR_TOKEN: "http://localhost:9000/api/metrics/search" | jq
 
+    - name: Debug SonarQube Backend Measures
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+      run: |
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities | jq
+
     - name: Verify Compiled Classes
       run: ls -la back/target/classes
-
 
     # Étape 6 : Analyse du backend avec SonarQube
     - name: Analyze Backend with SonarQube
