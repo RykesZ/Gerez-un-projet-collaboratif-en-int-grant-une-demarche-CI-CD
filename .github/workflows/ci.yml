@@ -272,8 +272,15 @@ jobs:
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.sources=src/main/java \
             -Dsonar.java.binaries=target/classes \
-            -Dsonar.language=java \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.language=java
+
+    - name: Save Backend JSON Metrics
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+      run: |
+        mkdir -p back/target/sonar-reports
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o back/target/sonar-reports/backend-report.json
+
 
     # Étape 7 : Générer les rapports HTML pour le backend
     - name: Generate Backend HTML Report
