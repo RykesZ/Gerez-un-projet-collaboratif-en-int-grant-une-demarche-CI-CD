@@ -256,7 +256,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
-        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities | jq
+        curl -u $SONAR_TOKEN: http://localhost:9000/api/measures/component?component_tree=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities | jq
 
     # Étape 6 : Analyse du backend avec SonarQube
     - name: Analyze Backend with SonarQube
