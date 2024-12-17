@@ -266,24 +266,28 @@ jobs:
       run: |
         cd back
         mvn -X verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=BobApp-backend \
-            -Dsonar.projectName='BobApp Backend' \
-            -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=$SONAR_TOKEN \
-            -Dsonar.sources=src/main/java \
-            -Dsonar.java.binaries=target/classes \
-            -Dsonar.language=java
+          -Dsonar.projectKey=BobApp-backend \
+          -Dsonar.projectName='BobApp Backend' \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.login=$SONAR_TOKEN \
+          -Dsonar.sources=src/main/java \
+          -Dsonar.java.binaries=target/classes \
+          -Dsonar.language=java \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
     - name: Save Backend JSON Metrics
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
         mkdir -p back/target/sonar-reports
-        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o back/target/sonar-reports/backend-report.json
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o back/target/sonar-reports/backend-report.json
 
+    - name: Convert Backend JSON Report to CSV
+      run: |
+        jq -r '.components[] | [.key, .measures[].metric, .measures[].value] | @csv' back/target/sonar-reports/backend-report.json > back/target/sonar-reports/backend-report.csv
 
     # Étape 7 : Générer les rapports HTML pour le backend
-    # - name: Generate Backend HTML Report
+    #- name: Generate Backend HTML Report
     #  env:
     #    SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
     #  run: |
@@ -314,8 +318,13 @@ jobs:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
         mkdir -p front/sonar-reports
-        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o front/sonar-reports/frontend-report.html
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component_tree?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o front/sonar-reports/frontend-report.json
 
+    - name: Convert Backend JSON Report to CSV
+      run: |
+        jq -r '.components[] | [.key, .measures[].metric, .measures[].value] | @csv' front/sonar-reports/frontend-report.json > front/sonar-reports/frontend-report.csv
+
+        
     # Étape 10 : Debugger et afficher les informations sur les projets analysés
     - name: Debug Analysis Logs
       run: |
@@ -333,8 +342,8 @@ jobs:
       with:
         name: sonar-reports
         path: |
-          back/target/sonar-reports/backend-report.json
-          front/sonar-reports/frontend-report.html
+          back/target/sonar-reports/backend-report.csv
+          front/sonar-reports/frontend-report.csv
 
   # Job pour déployer sur Docker Hub
   deploy:
