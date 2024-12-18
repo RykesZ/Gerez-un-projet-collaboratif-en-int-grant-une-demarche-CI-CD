@@ -170,6 +170,12 @@ jobs:
           name: bobapp-front
           path: bobapp-front.tar.gz
 
+      - name: Wait for Coverage Files
+        run: sleep 5
+
+      - name: Verify Coverage Files
+        run: ls -la front/coverage/bobapp
+
       - name: Upload Coverage Report and LCOV Info
         uses: actions/upload-artifact@v3
         with:
@@ -177,6 +183,7 @@ jobs:
           path: |
             front/coverage/bobapp/lcov.info
             front/coverage/bobapp/lcov-report
+          if-no-files-found: warn
 
   # Job pour analyser la qualité du code avec SonarQube
   quality_analysis:
