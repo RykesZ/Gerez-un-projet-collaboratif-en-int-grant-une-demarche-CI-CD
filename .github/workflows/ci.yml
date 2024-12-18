@@ -137,8 +137,8 @@ jobs:
         with:
           name: frontend-coverage
           path: |
-            coverage/bobapp/lcov.info
-            coverage/bobapp/lcov-report
+            front/coverage/bobapp/lcov.info
+            front/coverage/bobapp/lcov-report
           if-no-files-found: warn
 
       - name: Upload Frontend Test Report
