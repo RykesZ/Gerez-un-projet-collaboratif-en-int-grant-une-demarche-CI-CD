@@ -132,6 +132,15 @@ jobs:
           cd front
           cat coverage/bobapp/lcov.info
 
+      - name: Upload Coverage Report and LCOV Info
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-coverage
+          path: |
+            coverage/bobapp/lcov.info
+            coverage/bobapp/lcov-report
+          if-no-files-found: warn
+
       - name: Upload Frontend Test Report
         run: |
           # Définir le nom dynamique basé sur la date et l'heure
@@ -169,28 +178,6 @@ jobs:
         with:
           name: bobapp-front
           path: bobapp-front.tar.gz
-
-      - name: Wait for Coverage Files
-        run: sleep 5
-
-      - name: Verify Repertory
-        run: |
-          ls -la front
-          ls -la front/coverage
-
-      - name: Verify Coverage Files
-        run: |
-          cd front
-          ls -la coverage/bobapp
-
-      - name: Upload Coverage Report and LCOV Info
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-coverage
-          path: |
-            coverage/bobapp/lcov.info
-            coverage/bobapp/lcov-report
-          if-no-files-found: warn
 
   # Job pour analyser la qualité du code avec SonarQube
   quality_analysis:
