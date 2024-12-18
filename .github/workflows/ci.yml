@@ -122,6 +122,16 @@ jobs:
           cd front
           npm run test:ci -- --watch=false --code-coverage
 
+      - name: Verify Frontend Coverage Report
+        run: |
+          cd front
+          ls -la coverage/bobapp/lcov.info
+      
+      - name: Debug LCOV Content
+        run: |
+          cd front
+          cat coverage/bobapp/lcov.info
+
       - name: Upload Frontend Test Report
         run: |
           # Définir le nom dynamique basé sur la date et l'heure
@@ -328,19 +338,25 @@ jobs:
       env:
         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
       run: |
+        # Récupérer toutes les métriques disponibles
+        ALL_METRICS=$(curl -u $SONAR_TOKEN: "http://localhost:9000/api/metrics/search?ps=500" | jq -r '.metrics[].key' | paste -sd "," -)
+    
+        # Backend Metrics
         mkdir -p back/target/sonar-reports
-        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o back/target/sonar-reports/backend-metrics.json
-          echo "Metric,Value" > back/target/sonar-reports/backend-metrics.csv
-          jq -r '.component.measures[] | [.metric, .value] | @csv' back/target/sonar-reports/backend-metrics.json >> back/target/sonar-reports/backend-metrics.csv
-
-          mkdir -p front/sonar-reports
-          curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=ncloc,coverage,bugs,vulnerabilities" -o front/sonar-reports/frontend-metrics.json
-          echo "Metric,Value" > front/sonar-reports/frontend-metrics.csv
-          jq -r '.component.measures[] | [.metric, .value] | @csv' front/sonar-reports/frontend-metrics.json >> front/sonar-reports/frontend-metrics.csv
-
-          echo "Project,Metric,Value" > combined-metrics.csv
-          awk -F',' 'NR>1 {print "Backend,"$0}' back/target/sonar-reports/backend-metrics.csv >> combined-metrics.csv
-          awk -F',' 'NR>1 {print "Frontend,"$0}' front/sonar-reports/frontend-metrics.csv >> combined-metrics.csv
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component?component=BobApp-backend&metricKeys=$ALL_METRICS" -o back/target/sonar-reports/backend-metrics.json
+        echo "Metric,Value" > back/target/sonar-reports/backend-metrics.csv
+        jq -r '.component.measures[] | [.metric, .value] | @csv' back/target/sonar-reports/backend-metrics.json >> back/target/sonar-reports/backend-metrics.csv
+    
+        # Frontend Metrics
+        mkdir -p front/sonar-reports
+        curl -u $SONAR_TOKEN: "http://localhost:9000/api/measures/component?component=BobApp-frontend&metricKeys=$ALL_METRICS" -o front/sonar-reports/frontend-metrics.json
+        echo "Metric,Value" > front/sonar-reports/frontend-metrics.csv
+        jq -r '.component.measures[] | [.metric, .value] | @csv' front/sonar-reports/frontend-metrics.json >> front/sonar-reports/frontend-metrics.csv
+    
+        # Combine Backend and Frontend Metrics
+        echo "Project,Metric,Value" > combined-metrics.csv
+        awk -F',' 'NR>1 {print "Backend,"$0}' back/target/sonar-reports/backend-metrics.csv >> combined-metrics.csv
+        awk -F',' 'NR>1 {print "Frontend,"$0}' front/sonar-reports/frontend-metrics.csv >> combined-metrics.csv
 
     # Étape 11 : Archiver les rapports HTML comme artefacts
     - name: Upload SonarQube Reports as Artifacts
