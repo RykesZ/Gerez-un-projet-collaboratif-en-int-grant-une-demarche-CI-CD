@@ -179,15 +179,17 @@ jobs:
           ls -la front/coverage
 
       - name: Verify Coverage Files
-        run: ls -la front/coverage/bobapp
+        run: |
+          cd front
+          ls -la coverage/bobapp
 
       - name: Upload Coverage Report and LCOV Info
         uses: actions/upload-artifact@v3
         with:
           name: frontend-coverage
           path: |
-            front/coverage/bobapp/lcov.info
-            front/coverage/bobapp/lcov-report
+            coverage/bobapp/lcov.info
+            coverage/bobapp/lcov-report
           if-no-files-found: warn
 
   # Job pour analyser la qualité du code avec SonarQube
