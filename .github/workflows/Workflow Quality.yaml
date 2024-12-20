@@ -8,6 +8,11 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read  # Permet la lecture des fichiers du dépôt
+  actions: read   # Permet de lire les artefacts publiés par d'autres workflows
+  id-token: write # Si nécessaire pour des actions spécifiques (comme l'utilisation de SonarQube dans un cloud privé)
+
 jobs:
   quality_analysis:
     runs-on: ubuntu-latest
