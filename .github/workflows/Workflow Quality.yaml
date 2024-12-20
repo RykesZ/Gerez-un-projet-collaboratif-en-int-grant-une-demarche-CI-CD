@@ -24,12 +24,14 @@ jobs:
 
       - name: Download Artifact from CI/CD
         run: |
+          mkdir -p back/target/classes  # Crée le répertoire si nécessaire
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github.v3+json" \
               https://api.github.com/repos/RykesZ/Gerez-un-projet-collaboratif-en-int-grant-une-demarche-CI-CD/actions/artifacts \
               | jq -r '.artifacts[] | select(.name=="compiled-classes") | .archive_download_url' \
               | xargs -I {} curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o compiled-classes.zip {}
           unzip compiled-classes.zip -d back/target/classes
+
 
       - name: Verify Compiled Classes
         run: ls -la back/target/classes
