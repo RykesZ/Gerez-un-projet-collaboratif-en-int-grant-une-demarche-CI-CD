@@ -32,15 +32,18 @@ jobs:
               | xargs -I {} curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o compiled-classes.zip {}
           unzip compiled-classes.zip -d back/target/classes
 
-
       - name: Verify Compiled Classes
         run: ls -la back/target/classes
 
-      - name: Download Frontend Coverage Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-coverage
-          path: front/coverage/bobapp
+      - name: Download Artifact from CI/CD
+        run: |
+          mkdir -p front/coverage/bobapp  # Crée le répertoire si nécessaire
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/RykesZ/Gerez-un-projet-collaboratif-en-int-grant-une-demarche-CI-CD/actions/artifacts \
+              | jq -r '.artifacts[] | select(.name=="frontend-coverage") | .archive_download_url' \
+              | xargs -I {} curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o frontend-coverage.zip {}
+          unzip frontend-coverage.zip -d front/coverage/bobapp
 
       - name: Set up JDK 11
         uses: actions/setup-java@v4
