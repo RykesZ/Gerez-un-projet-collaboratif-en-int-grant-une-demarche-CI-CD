@@ -2,9 +2,11 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - Quality Analysis
+    types:
+      - completed
 
 jobs:
   backend_build:
@@ -38,12 +40,6 @@ jobs:
         with:
           name: bobapp-back
           path: bobapp-back.tar.gz
-
-      - name: Upload Compiled Java Classes
-        uses: actions/upload-artifact@v3
-        with:
-          name: compiled-classes
-          path: back/target/classes
 
   frontend_build:
     runs-on: ubuntu-latest
