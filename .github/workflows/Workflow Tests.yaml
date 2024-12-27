@@ -58,10 +58,17 @@ jobs:
         shell: bash
 
       - name: Upload JaCoCo Coverage Report as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.REPORT_NAME }}
           path: back/target/site/${{ env.REPORT_NAME }}
+          retention-days: 3
+
+      - name: Upload jacoco.xml as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco/jacoco.xml
           retention-days: 3
 
   frontend_tests:
@@ -117,7 +124,7 @@ jobs:
         run: ls -la ${{ env.REPORT_NAME }}
       
       - name: Upload Frontend Test Report Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.REPORT_NAME }}
           path: ${{ env.REPORT_NAME }}

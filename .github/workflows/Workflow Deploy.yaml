@@ -34,7 +34,7 @@ jobs:
 
       - name: Save Backend Docker image as artifact
         run: docker save bobapp-back:latest | gzip > bobapp-back.tar.gz
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: bobapp-back
           path: bobapp-back.tar.gz
@@ -73,7 +73,7 @@ jobs:
 
       - name: Save Frontend Docker image as artifact
         run: docker save bobapp-front:latest | gzip > bobapp-front.tar.gz
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: bobapp-front
           path: bobapp-front.tar.gz
