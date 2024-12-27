@@ -21,7 +21,7 @@ jobs:
       - name: Ensure jacoco.xml Directory Exists
         run: mkdir -p back/target/site/jacoco
 
-    - name: Download jacoco.xml Artifact
+      - name: Download jacoco.xml Artifact
         uses: actions/download-artifact@v3
         with:
           name: jacoco-report
