@@ -11,6 +11,7 @@ on:
 
 jobs:
   backend_tests:
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -54,9 +55,6 @@ jobs:
           
           # Déplacer tous les fichiers nécessaires dans le répertoire
           mv ./* "../$REPORT_NAME/"
-          
-          # Revenir au niveau supérieur
-          cd ..
         shell: bash
 
       - name: Upload JaCoCo Coverage Report as Artifact
@@ -64,8 +62,10 @@ jobs:
         with:
           name: ${{ env.REPORT_NAME }}
           path: back/target/site/${{ env.REPORT_NAME }}
+          retention-days: 3
 
   frontend_tests:
+    needs: ["backend_tests"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -74,7 +74,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 'latest'
+          node-version: 22.x
 
       - name: Install dependencies for Frontend
         run: |
@@ -99,6 +99,7 @@ jobs:
             front/coverage/bobapp/lcov.info
             front/coverage/bobapp/lcov-report
           if-no-files-found: warn
+          retention-days: 3
 
       - name: Upload Frontend Test Report
         run: |
@@ -120,3 +121,4 @@ jobs:
         with:
           name: ${{ env.REPORT_NAME }}
           path: ${{ env.REPORT_NAME }}
+          retention-days: 3

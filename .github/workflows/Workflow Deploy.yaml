@@ -1,5 +1,5 @@
-# Workflow CI/CD
-name: CI/CD Pipeline
+# Workflow Deploy
+name: Deploy Pipeline
 
 on:
   workflow_run:
@@ -11,6 +11,7 @@ on:
 jobs:
   backend_build:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -43,6 +44,7 @@ jobs:
 
   frontend_build:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
