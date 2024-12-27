@@ -1,0 +1,309 @@
+# Workflow Tests
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend_tests:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run Backend Tests with Coverage
+        run: |
+          cd back
+          mvn test
+
+      - name: Generate JaCoCo Coverage Report
+        run: |
+          cd back
+          mvn jacoco:report
+
+      - name: Set REPORT_NAME variable
+        id: set_report_name
+        run: echo "REPORT_NAME=tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_ENV
+
+      - name: Create JaCoCo Coverage Report Archive
+        run: |
+          # Naviguer vers le répertoire du backend
+          cd back/target/site/jacoco
+          
+          # Créer un répertoire avec le nom unique
+          mkdir -p "../$REPORT_NAME"
+          
+          # Déplacer tous les fichiers nécessaires dans le répertoire
+          mv ./* "../$REPORT_NAME/"
+        shell: bash
+
+      - name: Upload JaCoCo Coverage Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.REPORT_NAME }}
+          path: back/target/site/${{ env.REPORT_NAME }}
+          retention-days: 3
+
+      - name: Upload jacoco.xml as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco/jacoco.xml
+          retention-days: 3
+
+  frontend_tests:
+    needs: ["backend_tests"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+
+      - name: Install dependencies for Frontend
+        run: |
+          cd front
+          npm install
+
+      - name: Run Frontend Tests with Coverage
+        run: |
+          cd front
+          npm run test:ci -- --watch=false --code-coverage
+
+      - name: Verify Frontend Coverage Report
+        run: |
+          cd front
+          ls -la coverage/bobapp/lcov.info
+
+      - name: Upload Coverage Report and LCOV Info
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-coverage
+          path: |
+            front/coverage/bobapp/lcov.info
+            front/coverage/bobapp/lcov-report
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Upload Frontend Test Report
+        run: |
+          # Définir le nom dynamique basé sur la date et l'heure
+          REPORT_NAME="tests_frontend_jasmine_report_$(date +'%Y%m%d_%H%M%S')"
+          
+          # Renommer le dossier pour correspondre au nom de l'artefact
+          mv front/coverage/bobapp "$REPORT_NAME"
+
+          # Sauvegarder le nom de l'artefact dans une variable d'environnement pour l'étape suivante
+          echo "REPORT_NAME=$REPORT_NAME" >> $GITHUB_ENV
+        shell: bash
+      
+      - name: Verify Artifact Directory
+        run: ls -la ${{ env.REPORT_NAME }}
+      
+      - name: Upload Frontend Test Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.REPORT_NAME }}
+          path: ${{ env.REPORT_NAME }}
+          retention-days: 3
+
+  quality_analysis_backend:
+    needs: ["backend_tests", "frontend_tests"] 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure jacoco.xml Directory Exists
+        run: mkdir -p back/target/site/jacoco
+
+      - name: Download jacoco.xml Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: jacoco-report
+          path: back/target/site/jacoco
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+
+      - name: Build Backend for SonarQube
+        run: |
+          cd back
+          mvn clean compile
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./back
+
+  quality_analysis_frontend:
+  needs: ["backend_tests", "frontend_tests"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure lcov-report Directory Exists
+        run: mkdir -p front/coverage/bobapp
+
+      - name: Download Coverage Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-coverage
+          path: front/coverage/bobapp
+
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd front
+          npm install
+      
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./front
+
+  backend_build:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Build Backend
+        run: |
+          cd back
+          mvn clean compile
+
+      - name: Verify Compilation Output
+        run: ls -la back/target/classes
+
+      - name: Build Docker image for Backend
+        run: |
+          cd back
+          docker build -t bobapp-back:latest .
+
+      - name: Save Backend Docker image as artifact
+        run: docker save bobapp-back:latest | gzip > bobapp-back.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bobapp-back
+          path: bobapp-back.tar.gz
+
+  frontend_build:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies for ChromeHeadless
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk1.0-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxrandr2 libxss1 libxtst6 fonts-liberation libappindicator3-1 libasound2 libgbm1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'latest'
+
+      - name: Install dependencies for Frontend
+        run: |
+          cd front
+          npm install
+
+      - name: Build Frontend
+        run: |
+          cd front
+          npm run build
+
+      - name: Build Docker image for Frontend
+        run: |
+          cd front
+          docker build -t bobapp-front:latest .
+
+      - name: Save Frontend Docker image as artifact
+        run: docker save bobapp-front:latest | gzip > bobapp-front.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bobapp-front
+          path: bobapp-front.tar.gz
+
+  deploy:
+    needs: [backend_build, frontend_build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Backend Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bobapp-back
+      - name: Load Backend Docker image
+        run: gunzip -c bobapp-back.tar.gz | docker load
+
+      - name: Download Frontend Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bobapp-front
+      - name: Load Frontend Docker image
+        run: gunzip -c bobapp-front.tar.gz | docker load
+  
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Tag and Push Backend Docker image
+        run: |
+          docker tag bobapp-back:latest ${{ secrets.DOCKER_USERNAME }}/bobapp-back:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/bobapp-back:latest
+
+      - name: Tag and Push Frontend Docker image
+        run: |
+          docker tag bobapp-front:latest ${{ secrets.DOCKER_USERNAME }}/bobapp-front:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/bobapp-front:latest
