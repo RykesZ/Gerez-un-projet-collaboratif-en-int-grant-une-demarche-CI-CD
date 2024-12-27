@@ -23,7 +23,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: back/
+          projectBaseDir: ./back
 
   quality_analysis_frontend:
     runs-on: ubuntu-latest
@@ -39,4 +39,4 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: front/
+          projectBaseDir: ./front
