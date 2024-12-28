@@ -42,20 +42,9 @@ jobs:
         run: |
           mvn jacoco:report
 
-      - name: Verify Jacoco content
-        run: |
-          ls -la target/site/jacoco/jacoco.xml
-
-      - name: Upload jacoco.xml as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: back/target/site/jacoco/jacoco.xml
-          retention-days: 3
-
-      - name: Set REPORT_NAME variable
-        id: set_report_name
-        run: echo "REPORT_NAME=tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_ENV
+      - name: Set BACKEND_REPORT_NAME variable
+        id: set_backend_report_name
+        run: echo "BACKEND_REPORT_NAME=tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_ENV
 
       - name: Create JaCoCo Coverage Report Archive
         run: |
@@ -63,20 +52,18 @@ jobs:
           cd target/site/jacoco
           
           # Créer un répertoire avec le nom unique
-          mkdir -p "../$REPORT_NAME"
+          mkdir -p "../$BACKEND_REPORT_NAME"
           
           # Déplacer tous les fichiers nécessaires dans le répertoire
-          mv ./* "../$REPORT_NAME/"
+          mv ./* "../$BACKEND_REPORT_NAME/"
         shell: bash
 
       - name: Upload JaCoCo Coverage Report as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.REPORT_NAME }}
-          path: back/target/site/${{ env.REPORT_NAME }}
+          name: ${{ env.BACKEND_REPORT_NAME }}
+          path: back/target/site/${{ env.BACKEND_REPORT_NAME }}
           retention-days: 3
-
-      
 
   frontend_tests:
     needs: ["backend_tests"]
@@ -118,23 +105,23 @@ jobs:
       - name: Upload Frontend Test Report
         run: |
           # Définir le nom dynamique basé sur la date et l'heure
-          REPORT_NAME="tests_frontend_jasmine_report_$(date +'%Y%m%d_%H%M%S')"
+          FRONTEND_REPORT_NAME="tests_frontend_jasmine_report_$(date +'%Y%m%d_%H%M%S')"
           
           # Renommer le dossier pour correspondre au nom de l'artefact
-          mv coverage/bobapp "$REPORT_NAME"
+          mv coverage/bobapp "$FRONTEND_REPORT_NAME"
 
           # Sauvegarder le nom de l'artefact dans une variable d'environnement pour l'étape suivante
-          echo "REPORT_NAME=$REPORT_NAME" >> $GITHUB_ENV
+          echo "FRONTEND_REPORT_NAME=$FRONTEND_REPORT_NAME" >> $GITHUB_ENV
         shell: bash
       
       - name: Verify Artifact Directory
-        run: ls -la ${{ env.REPORT_NAME }}
+        run: ls -la ${{ env.FRONTEND_REPORT_NAME }}
       
       - name: Upload Frontend Test Report Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.REPORT_NAME }}
-          path: front/${{ env.REPORT_NAME }}
+          name: ${{ env.FRONTEND_REPORT_NAME }}
+          path: front/${{ env.FRONTEND_REPORT_NAME }}
           retention-days: 3
 
   quality_analysis_backend:
@@ -146,13 +133,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure jacoco.xml Directory Exists
+      - name: Ensure jacoco Directory Exists
         run: mkdir -p back/target/site/jacoco
 
-      - name: Download jacoco.xml Artifact
+      - name: Download jacoco Artifact
         uses: actions/download-artifact@v3
         with:
-          name: jacoco-report
+          name: ${{ env.BACKEND_REPORT_NAME }}
           path: back/target/site/jacoco
       
       - name: Set up JDK 11
@@ -188,9 +175,8 @@ jobs:
       - name: Download Coverage Artifacts
         uses: actions/download-artifact@v3
         with:
-          name: frontend-coverage
+          name: ${{ env.FRONTEND_REPORT_NAME }}
           path: front/coverage/bobapp
-
 
       - name: Install Node.js
         uses: actions/setup-node@v3
