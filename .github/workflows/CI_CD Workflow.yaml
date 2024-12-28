@@ -42,27 +42,11 @@ jobs:
         run: |
           mvn jacoco:report
 
-      - name: Set BACKEND_REPORT_NAME variable
-        id: set_backend_report_name
-        run: echo "BACKEND_REPORT_NAME=tests_backend_jacoco_report_$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_ENV
-
-      - name: Create JaCoCo Coverage Report Archive
-        run: |
-          # Naviguer vers le répertoire du backend
-          cd target/site/jacoco
-          
-          # Créer un répertoire avec le nom unique
-          mkdir -p "../$BACKEND_REPORT_NAME"
-          
-          # Déplacer tous les fichiers nécessaires dans le répertoire
-          mv ./* "../$BACKEND_REPORT_NAME/"
-        shell: bash
-
       - name: Upload JaCoCo Coverage Report as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BACKEND_REPORT_NAME }}
-          path: back/target/site/${{ env.BACKEND_REPORT_NAME }}
+          name: jacoco-report
+          path: back/target/site
           retention-days: 3
 
   frontend_tests:
@@ -91,37 +75,12 @@ jobs:
       - name: Verify Frontend Coverage Report
         run: |
           ls -la coverage/bobapp/lcov.info
-
-      - name: Upload Coverage Report and LCOV Info
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-coverage
-          path: |
-            front/coverage/bobapp/lcov.info
-            front/coverage/bobapp/lcov-report
-          if-no-files-found: warn
-          retention-days: 3
-
-      - name: Upload Frontend Test Report
-        run: |
-          # Définir le nom dynamique basé sur la date et l'heure
-          FRONTEND_REPORT_NAME="tests_frontend_jasmine_report_$(date +'%Y%m%d_%H%M%S')"
-          
-          # Renommer le dossier pour correspondre au nom de l'artefact
-          mv coverage/bobapp "$FRONTEND_REPORT_NAME"
-
-          # Sauvegarder le nom de l'artefact dans une variable d'environnement pour l'étape suivante
-          echo "FRONTEND_REPORT_NAME=$FRONTEND_REPORT_NAME" >> $GITHUB_ENV
-        shell: bash
-      
-      - name: Verify Artifact Directory
-        run: ls -la ${{ env.FRONTEND_REPORT_NAME }}
       
       - name: Upload Frontend Test Report Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.FRONTEND_REPORT_NAME }}
-          path: front/${{ env.FRONTEND_REPORT_NAME }}
+          name: jasmine-report
+          path: front/coverage
           retention-days: 3
 
   quality_analysis_backend:
@@ -134,13 +93,17 @@ jobs:
           fetch-depth: 0
 
       - name: Ensure jacoco Directory Exists
-        run: mkdir -p back/target/site/jacoco
+        run: mkdir -p back/target/site
 
       - name: Download jacoco Artifact
         uses: actions/download-artifact@v3
         with:
-          name: ${{ env.BACKEND_REPORT_NAME }}
-          path: back/target/site/jacoco
+          name: jacoco-report
+          path: back/target/site
+
+      - name: Verify Backend Coverage Report Hierarchy
+        run: |
+          ls -la back/target/site
       
       - name: Set up JDK 11
         uses: actions/setup-java@v4
@@ -170,13 +133,17 @@ jobs:
           fetch-depth: 0
 
       - name: Ensure lcov-report Directory Exists
-        run: mkdir -p front/coverage/bobapp
+        run: mkdir -p front/coverage
 
       - name: Download Coverage Artifacts
         uses: actions/download-artifact@v3
         with:
-          name: ${{ env.FRONTEND_REPORT_NAME }}
-          path: front/coverage/bobapp
+          name: jasmine-report
+          path: front/coverage
+
+      - name: Verify Frontend Coverage Report Hierarchy
+        run: |
+          ls -la front/coverage/
 
       - name: Install Node.js
         uses: actions/setup-node@v3
