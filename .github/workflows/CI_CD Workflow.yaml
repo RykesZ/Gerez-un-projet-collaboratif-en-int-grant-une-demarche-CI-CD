@@ -125,7 +125,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: ./back
-        run: sonar-scanner -X
 
   quality_analysis_frontend:
     needs: ["backend_tests", "frontend_tests"]
