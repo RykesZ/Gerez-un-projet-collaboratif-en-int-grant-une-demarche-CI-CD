@@ -242,14 +242,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Backend Docker image artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: bobapp-back
       - name: Load Backend Docker image
         run: gunzip -c bobapp-back.tar.gz | docker load
 
       - name: Download Frontend Docker image artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: bobapp-front
       - name: Load Frontend Docker image
