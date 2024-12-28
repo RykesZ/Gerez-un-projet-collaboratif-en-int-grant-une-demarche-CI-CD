@@ -104,6 +104,9 @@ jobs:
       - name: Verify Backend Coverage Report Hierarchy
         run: |
           ls -la back/target/site/jacoco
+
+      - name: Verify Jacoco File Content
+        run: head -n 20 back/target/site/jacoco/jacoco.xml
       
       - name: Set up JDK 11
         uses: actions/setup-java@v4
@@ -122,6 +125,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: ./back
+        run: sonar-scanner -X
 
   quality_analysis_frontend:
     needs: ["backend_tests", "frontend_tests"]
