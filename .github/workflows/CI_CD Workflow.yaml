@@ -50,7 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
-          path: target/site/jacoco/jacoco.xml
+          path: back/target/site/jacoco/jacoco.xml
           retention-days: 3
 
       - name: Set REPORT_NAME variable
@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.REPORT_NAME }}
-          path: target/site/${{ env.REPORT_NAME }}
+          path: back/target/site/${{ env.REPORT_NAME }}
           retention-days: 3
 
       
@@ -110,8 +110,8 @@ jobs:
         with:
           name: frontend-coverage
           path: |
-            coverage/bobapp/lcov.info
-            coverage/bobapp/lcov-report
+            front/coverage/bobapp/lcov.info
+            front/coverage/bobapp/lcov-report
           if-no-files-found: warn
           retention-days: 3
 
@@ -134,7 +134,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.REPORT_NAME }}
-          path: ${{ env.REPORT_NAME }}
+          path: front/${{ env.REPORT_NAME }}
           retention-days: 3
 
   quality_analysis_backend:
